@@ -5,31 +5,49 @@ import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.core.app.ActivityCompat.requestPermissions
 import com.test.bletestlakhai.MainActivity
 
 
-const val REQUEST_ENABLE_BT = 2
-fun hasPermissions(activity: Activity, context: Context): Boolean {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) { // Android 12+
-        if (context.checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED ||
-            context.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED
-        ) {
-            activity.requestPermissions(
-                arrayOf(
-                    Manifest.permission.BLUETOOTH_SCAN,
-                    Manifest.permission.BLUETOOTH_CONNECT
-                ), 1
-            )
-            return false
-        }
-    } else { // Below Android 12
-        if (context.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            activity.requestPermissions(
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 1
-            )
-            return false
+val ALL_BLE_PERMISSIONS = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+    arrayOf(
+        Manifest.permission.BLUETOOTH_CONNECT,
+        Manifest.permission.BLUETOOTH_SCAN
+    )
+} else {
+    arrayOf(
+        Manifest.permission.BLUETOOTH_ADMIN,
+        Manifest.permission.BLUETOOTH,
+        Manifest.permission.ACCESS_FINE_LOCATION
+    )
+}
+
+@Composable
+fun GrantPermissionsButton(paddingValues: PaddingValues,onPermissionGranted: () -> Unit) {
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { granted ->
+        if (granted.values.all { it }) {
+            // User has granted all permissions
+            onPermissionGranted()
+        } else {
+            // TODO: handle potential rejection in the usual way
         }
     }
-    return true
+
+    // User presses this button to request permissions
+    Button(onClick = { launcher.launch(ALL_BLE_PERMISSIONS) }) {
+        Text("Grant Permission")
+    }
 }
+
+fun haveAllPermissions(context: Context) =
+    ALL_BLE_PERMISSIONS
+        .all { context.checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED }
