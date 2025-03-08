@@ -7,9 +7,11 @@ import android.app.Activity
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothAdapter.LeScanCallback
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothDevice.BOND_NONE
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.BluetoothLeScanner
@@ -110,29 +112,61 @@ class MainActivity : ComponentActivity() {
     //Whatever we do with our Bluetooth device connection, whether now or later, we will get the
 //results in this callback object, which can become massive.
     private val callback = object : BluetoothGattCallback() {
-        @Deprecated("Deprecated in Java")
-        override fun onCharacteristicRead(
-            gatt: BluetoothGatt,
-            characteristic: BluetoothGattCharacteristic,
-            status: Int
-        ) {
-            super.onCharacteristicRead(gatt, characteristic, status)
-            Log.d("dsadsadads", String(characteristic.value))
 
+
+
+        @Deprecated("Deprecated in Java")
+        override fun onCharacteristicChanged(
+            gatt: BluetoothGatt?,
+            characteristic: BluetoothGattCharacteristic?
+        ) {
+            characteristic?.value?.let { value ->
+                val dataString = value.joinToString(" ") { it.toString() } // Log raw data
+                Log.d("dsadsadads", "Received GPS Data: $dataString")
+            }
+        }
+        @SuppressLint("MissingPermission")
+        fun sendStartCommand(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic) {
+            characteristic.value = byteArrayOf(0x01) // Try sending 0x01 or another expected command
+            gatt.writeCharacteristic(characteristic)
         }
 
-
-
         //We will override more methods here as we add functionality.
+        @SuppressLint("MissingPermission")
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
             super.onServicesDiscovered(gatt, status)
             Log.d("dsadsadads", "onServicesDiscovered ${gatt.services}")
+//            gatt.services.forEach{service->
+//                Log.d("dsadsadads", "Service UUID: ${service.uuid}")
+//                service.characteristics.forEach{characteristic->
+//                    Log.d("dsadsadads", "Characteristic UUID: ${characteristic.uuid}")
+//                    characteristic.descriptors.forEach{descriptor->
+//                        Log.d("dsadsadads", "Descriptor UUID: ${descriptor.uuid}")
+//                    }
+//                }
+//            }
             services = gatt.services
-            Log.d("dsadsadads", "firstService ${services.get(0).uuid}")
-            readCharacteristic(services.get(0).uuid,services.get(0).characteristics.get(0).uuid)
+
+            val gpsService = gatt?.getService(UUID.fromString("0000ffe0-0000-1000-8000-00805f9b34fb"))
+
+            gpsService?.characteristics?.forEach { characteristic ->
+                Log.d("dsadsadads", "Reading Characteristic: ${characteristic.uuid}")
+                enableNotifications(gatt, characteristic)
+                sendStartCommand(gatt,characteristic )
+                gatt.readCharacteristic(characteristic)
+            }
+        //            readCharacteristic(services.get(0).uuid,services.get(0).characteristics.get(0).uuid)
 
         }
+        @SuppressLint("MissingPermission")
+        fun enableNotifications(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic) {
+            gatt.setCharacteristicNotification(characteristic, true)
 
+            val descriptor = characteristic.getDescriptor(UUID.fromString("00002902-0000-1000-8000-00805f9b34fb"))
+            descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+            gatt.writeDescriptor(descriptor)
+        }
+        @SuppressLint("MissingPermission")
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
             super.onConnectionStateChange(gatt, status, newState)
             //This tells us when we're connected or disconnected from the peripheral.
@@ -144,6 +178,9 @@ class MainActivity : ComponentActivity() {
 
             if (newState == BluetoothGatt.STATE_CONNECTED) {
                 Log.d("dsadsadads", "CONNECTED!")
+                val bondState = selectedDevice?.bondState
+
+                Log.d("dsadsadads", "bondState $bondState")
                 discoverServices()
 
             }
@@ -161,7 +198,7 @@ class MainActivity : ComponentActivity() {
     }
     @SuppressLint("MissingPermission")
     fun connect(context: Context) {
-        gatt = selectedDevice?.connectGatt(context, false, callback)
+        gatt = selectedDevice?.connectGatt(context, true, callback)
     }
 }
 
