@@ -91,7 +91,7 @@ fun BleDataScreen(
 
         Text("Discovered Services (${discoveredServices.size}):", fontWeight = FontWeight.SemiBold)
         if (discoveredServices.isNotEmpty()) {
-            discoveredServices.take(3).forEach { serviceUuid -> // Показуємо перші 3
+            discoveredServices.take(3).forEach { serviceUuid ->
                 Text("- $serviceUuid", fontSize = 12.sp)
             }
             if (discoveredServices.size > 3) Text("... and more")

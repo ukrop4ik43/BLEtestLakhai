@@ -69,10 +69,9 @@ class AndroidBluetoothDataSource(private val context: Context) {
                         Log.i(TAG, "Connected to $deviceAddress")
                         this@AndroidBluetoothDataSource.gatt = gatt
                         _connectionStatusFlow.update { ConnectionStatus.Connected(deviceAddress) }
-                        // Запускаємо виявлення сервісів після успішного підключення
                         Handler(Looper.getMainLooper()).postDelayed({
                             gatt.discoverServices()
-                        }, 500) // Невелика затримка може допомогти на деяких пристроях
+                        }, 500)
                     }
 
                     BluetoothProfile.STATE_DISCONNECTED -> {
@@ -93,8 +92,6 @@ class AndroidBluetoothDataSource(private val context: Context) {
                 Log.i(TAG, "Services discovered for ${gatt.device.address}")
                 _discoveredServicesFlow.value = gatt.services.map { it.uuid.toString() }
                 _connectionStatusFlow.update { ConnectionStatus.ServicesDiscovered }
-                // Можна автоматично почати читати RSSI тут, якщо потрібно
-                // startRssiPolling()
             } else {
                 Log.w(TAG, "Service discovery failed with status: $status")
                 _connectionStatusFlow.update { ConnectionStatus.Error("Service discovery failed") }

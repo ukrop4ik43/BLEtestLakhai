@@ -28,7 +28,7 @@ class BluetoothViewModel(
     private val repository: BluetoothRepository
 ) : ViewModel() {
 
-    private val _targetDeviceAddress = MutableStateFlow("48:87:2D:9C:F5:42") // Ваша цільова адреса
+    private val _targetDeviceAddress = MutableStateFlow("48:87:2D:9C:F5:42")
     val targetDeviceAddress: StateFlow<String> = _targetDeviceAddress.asStateFlow()
 
     private val _scannedDevice = MutableStateFlow<BleDevice?>(null)
@@ -94,7 +94,7 @@ class BluetoothViewModel(
                         _scannedDevice.value = device
                         Log.i(TAG_VM, "Device found: ${device.address}. Attempting to connect.")
                         connectToDevice(device.address)
-                        scanJob?.cancel() // Зупинити сканування після знаходження
+                        scanJob?.cancel()
                     } else {
                         Log.w(TAG_VM, "Target device not found during scan.")
                     }

@@ -10,16 +10,12 @@ class KalmanFilter {
         if (estimatedRSSI == null) {
             estimatedRSSI = measuredRSSI
         } else {
-            // Prediction
             estimationError += processNoise
 
-            // Kalman Gain
             val kalmanGain = estimationError / (estimationError + measurementNoise)
 
-            // Update Estimate
             estimatedRSSI = estimatedRSSI!! + kalmanGain * (measuredRSSI - estimatedRSSI!!)
 
-            // Update Estimation Error
             estimationError *= (1 - kalmanGain)
         }
         return estimatedRSSI!!

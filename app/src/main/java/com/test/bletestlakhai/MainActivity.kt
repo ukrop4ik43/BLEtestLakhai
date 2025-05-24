@@ -43,7 +43,6 @@ class MainActivity : ComponentActivity() {
                         if (hasPermissions) {
                             // Дозволи надано, можна ініціювати дії, якщо потрібно
                         } else {
-                            // Обробка відмови у дозволах
                         }
                     }
 
